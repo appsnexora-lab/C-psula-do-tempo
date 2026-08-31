@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Vault root documents and all subcollections (Shared family cloud vault)
+    match /vaults/{vaultId} {
+      allow read, write: if true;
+
+      match /memories/{memoryId} {
+        allow read, write: if true;
+      }
+
+      match /letters/{letterId} {
+        allow read, write: if true;
+      }
+
+      match /milestones/{milestoneId} {
+        allow read, write: if true;
+      }
+
+      match /{allSubpaths=**} {
+        allow read, write: if true;
+      }
+    }
+  }
+}
+

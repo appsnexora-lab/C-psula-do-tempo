@@ -1,0 +1,220 @@
+{
+  "entities": {
+    "Vault": {
+      "title": "Vault",
+      "description": "Shared family vault representing the combined couple profile for Papai & Mamãe.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique pairing ID or vault code (e.g. OLIVIA-FAMILIA)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Family space name."
+        },
+        "childProfile": {
+          "type": "object",
+          "description": "Child profile data including name, nickname, birthDate, and photo."
+        },
+        "authors": {
+          "type": "array",
+          "description": "List of author profiles (Papai, Mamãe)."
+        },
+        "securitySettings": {
+          "type": "object",
+          "description": "Security and PIN configurations."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp."
+        }
+      },
+      "required": ["id", "childProfile", "createdAt", "updatedAt"]
+    },
+    "Memory": {
+      "title": "Memory",
+      "description": "A recorded memory with stories, photos, videos, or voice audio.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique memory ID."
+        },
+        "vaultId": {
+          "type": "string",
+          "description": "Vault this memory belongs to."
+        },
+        "title": {
+          "type": "string",
+          "description": "Memory title."
+        },
+        "content": {
+          "type": "string",
+          "description": "Story content."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the event (YYYY-MM-DD)."
+        },
+        "time": {
+          "type": "string",
+          "description": "Time of event (optional)."
+        },
+        "location": {
+          "type": "string",
+          "description": "Location description."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Name of the parent who recorded this (Papai, Mamãe, etc)."
+        },
+        "calculatedAge": {
+          "type": "string",
+          "description": "Child's calculated age at that moment."
+        },
+        "moods": {
+          "type": "array",
+          "description": "List of moods/feelings."
+        },
+        "isSpecial": {
+          "type": "boolean",
+          "description": "Whether marked as a special moment."
+        },
+        "isFirstTime": {
+          "type": "boolean",
+          "description": "Whether this is a milestone/first-time event."
+        },
+        "firstTimeCategory": {
+          "type": "string",
+          "description": "Category for milestone."
+        },
+        "photos": {
+          "type": "array",
+          "description": "Array of photo objects."
+        },
+        "videos": {
+          "type": "array",
+          "description": "Array of video objects."
+        },
+        "audios": {
+          "type": "array",
+          "description": "Array of audio voice recordings."
+        },
+        "isFutureLocked": {
+          "type": "boolean",
+          "description": "Time capsule lock flag."
+        },
+        "unlockDate": {
+          "type": "string",
+          "description": "Date when unlocked."
+        },
+        "unlockAge": {
+          "type": "number",
+          "description": "Age when unlocked."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Update timestamp."
+        },
+        "isDeleted": {
+          "type": "boolean",
+          "description": "Soft deletion flag."
+        }
+      },
+      "required": ["id", "title", "content", "date", "createdAt", "updatedAt"]
+    },
+    "Letter": {
+      "title": "Letter",
+      "description": "A letter written to the child for the future.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique letter ID."
+        },
+        "vaultId": {
+          "type": "string",
+          "description": "Vault this letter belongs to."
+        },
+        "title": {
+          "type": "string",
+          "description": "Letter title."
+        },
+        "content": {
+          "type": "string",
+          "description": "Letter body text."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date written."
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "Attached photo."
+        },
+        "audio": {
+          "type": "object",
+          "description": "Attached voice recording."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Author parent name."
+        },
+        "isFutureLocked": {
+          "type": "boolean",
+          "description": "Time capsule lock flag."
+        },
+        "unlockDate": {
+          "type": "string",
+          "description": "Unlock date."
+        },
+        "unlockAge": {
+          "type": "number",
+          "description": "Unlock age."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Update timestamp."
+        },
+        "isDeleted": {
+          "type": "boolean",
+          "description": "Soft delete flag."
+        }
+      },
+      "required": ["id", "title", "content", "date", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/vaults/{vaultId}": {
+      "schema": "Vault",
+      "description": "Shared family vault documents holding child profile and configuration."
+    },
+    "/vaults/{vaultId}/memories/{memoryId}": {
+      "schema": "Memory",
+      "description": "Memories subcollection synced in real-time between parents."
+    },
+    "/vaults/{vaultId}/letters/{letterId}": {
+      "schema": "Letter",
+      "description": "Letters subcollection synced in real-time between parents."
+    }
+  }
+}

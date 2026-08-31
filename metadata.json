@@ -1,0 +1,6 @@
+{
+  "name": "Para Você",
+  "description": "Diário privado e cápsula do tempo digital para registrar a infância e o crescimento de uma filha.",
+  "requestFramePermissions": ["microphone", "camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
