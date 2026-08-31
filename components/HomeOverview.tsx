@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Clock,
   ShieldCheck,
+  X,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -125,14 +126,72 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
 
   const childFirstName = childProfile.name ? childProfile.name.trim().split(' ')[0] : 'Você';
 
+  const [isReminderDismissed, setIsReminderDismissed] = React.useState(false);
+
+  const inactivityInfo = React.useMemo(() => {
+    if (activeMemories.length === 0) {
+      return {
+        daysSince: null,
+        showReminder: true,
+        type: 'zero',
+        badge: 'Primeira memória',
+        message: `Comece a guardar a história de ${childFirstName}. Cada pequeno detalhe do dia a dia será um tesouro no futuro.`,
+        prompt: 'Qual foi o momento mais marcante com ela hoje?',
+      };
+    }
+
+    const sortedDates = activeMemories
+      .map((m) => new Date(m.date).getTime())
+      .filter((time) => !isNaN(time))
+      .sort((a, b) => b - a);
+
+    if (sortedDates.length === 0) return { daysSince: null, showReminder: false, type: 'none', badge: '', message: '', prompt: '' };
+
+    const lastTime = sortedDates[0];
+    const nowTime = new Date().getTime();
+    const diffDays = Math.floor((nowTime - lastTime) / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 2) {
+      const promptSuggestions = [
+        'O que fez vocês sorrirem juntos recentemente?',
+        'Houve alguma palavra nova, gesto curioso ou brincadeira favorita nos últimos dias?',
+        'Que tal registrar como foi o dia ou um detalhe da rotina hoje?',
+        'Um pequeno aprendizado que você não quer esquecer com o passar do tempo...',
+      ];
+      const selectedPrompt = promptSuggestions[Math.min(diffDays, promptSuggestions.length - 1)];
+
+      return {
+        daysSince: diffDays,
+        showReminder: true,
+        type: 'inactive',
+        badge: `${diffDays} dias sem registrar`,
+        message:
+          diffDays === 2
+            ? `Já faz 2 dias desde a última lembrança guardada para ${childFirstName}.`
+            : `Faz ${diffDays} dias desde o último registro para ${childFirstName}.`,
+        prompt: selectedPrompt,
+      };
+    }
+
+    return { daysSince: diffDays, showReminder: false, type: 'recent', badge: '', message: '', prompt: '' };
+  }, [activeMemories, childFirstName]);
+
   return (
     <div id="home-overview" className="space-y-6">
       {/* Top Header Card */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2">
         <div>
-          <h1 className="font-serif text-3xl sm:text-4xl text-[#3D4B38] tracking-tight font-normal">
-            Para Você
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-serif text-3xl sm:text-4xl text-[#3D4B38] tracking-tight font-normal">
+              Para Você
+            </h1>
+            {inactivityInfo.showReminder && !isReminderDismissed && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-tight bg-[#D4AF37]/15 text-[#8C6D1F] border border-[#D4AF37]/30 animate-pulse" title="Sugestão de novo registro">
+                <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                <span>{inactivityInfo.badge}</span>
+              </span>
+            )}
+          </div>
           <p className="text-[#8C867E] text-sm italic mt-1 font-serif">
             {authorsText}
           </p>
@@ -176,6 +235,54 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Author Inactivity Reminder Notification Banner */}
+      {inactivityInfo.showReminder && !isReminderDismissed && (
+        <div
+          id="author-inactivity-reminder"
+          className="relative p-4 sm:p-4.5 rounded-2xl bg-gradient-to-r from-[#FFFBF2] to-[#FAF6ED] border border-[#EADBCE] shadow-xs text-[#4A443F] space-y-2.5 transition-all"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-[#D4AF37]/20 flex items-center justify-center text-[#8C6D1F] shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-[#3D4B38] block font-serif">
+                  Momento para registrar uma lembrança
+                </span>
+                <span className="text-[11px] text-[#8C867E] block">
+                  {inactivityInfo.message}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsReminderDismissed(true)}
+              className="text-[#8C867E] hover:text-[#4A443F] p-1 rounded-lg hover:bg-black/5 transition-colors"
+              title="Dispensar aviso"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+            <p className="text-xs text-[#5C554E] italic font-serif">
+              💭 &ldquo;{inactivityInfo.prompt}&rdquo;
+            </p>
+
+            <button
+              type="button"
+              onClick={onOpenAddModal}
+              className="self-start sm:self-auto px-4 py-2 rounded-xl bg-[#4A6741] hover:bg-[#3D5235] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Registrar agora</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Birthday Banner if applicable */}
       {birthdayInfo.message && (

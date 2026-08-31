@@ -68,6 +68,8 @@ export interface Memory {
   unlockAge?: number; // e.g. 10, 15, 18
   unlockDate?: string; // YYYY-MM-DD
   isUnlocked?: boolean;
+  tags?: string[];
+  childQuote?: string;
   createdAt: string;
   updatedAt: string;
   isDeleted?: boolean;

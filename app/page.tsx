@@ -36,6 +36,7 @@ import { ExportModal } from '@/components/ExportModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { FirebaseSyncService } from '@/services/firebaseService';
 import { ChevronLeft, Heart } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const emptySubscribe = () => () => {};
 
@@ -438,140 +439,19 @@ export default function Home() {
           </div>
         )}
 
-        {/* View Switcher based on ActiveTab & SubView */}
-        {activeSubView ? (
-          /* Subviews */
-          activeSubView === 'tree' ? (
-            <TreeOfLife
-              memories={data.memories}
-              childProfile={data.childProfile}
-              onSelectMemory={handleOpenDetailMemory}
-              onOpenAddMemory={() => handleOpenAddMemory()}
-              isFullView={true}
-            />
-          ) : activeSubView === 'capsule' ? (
-            <TimeCapsuleView
-              memories={data.memories}
-              letters={data.letters}
-              childProfile={data.childProfile}
-              onSelectMemory={handleOpenDetailMemory}
-            />
-          ) : activeSubView === 'milestones' ? (
-            <MilestonesView
-              milestones={data.milestones}
-              memories={data.memories}
-              onSelectMilestoneMemory={(memId) => {
-                const found = data.memories.find((m) => m.id === memId);
-                if (found) handleOpenDetailMemory(found);
-              }}
-              onRecordMilestone={(cat) => handleOpenAddMemory(cat)}
-              onAddCustomMilestone={handleAddCustomMilestone}
-            />
-          ) : activeSubView === 'growth' ? (
-            <GrowthStagesView
-              memories={data.memories}
-              childProfile={data.childProfile}
-              onSelectMemory={handleOpenDetailMemory}
-              onFilterStage={(stage) => {
-                setActiveTab('memorias');
-                setActiveSubView(null);
-              }}
-            />
-          ) : activeSubView === 'trash' ? (
-            <TrashView
-              deletedMemories={deletedMemories}
-              deletedLetters={deletedLetters}
-              onRestoreMemory={handleRestoreMemory}
-              onPermanentDeleteMemory={handlePermanentDeleteMemory}
-              onRestoreLetter={handleRestoreLetter}
-              onPermanentDeleteLetter={handlePermanentDeleteLetter}
-            />
-          ) : null
-        ) : (
-          /* Main Primary Tabs */
-          <>
-            {activeTab === 'inicio' && (
-              <div className="space-y-8">
-                {/* 1. Header Overview with Age, Counters and 15-Year Countdown */}
-                <HomeOverview
-                  childProfile={data.childProfile}
-                  authorProfile={data.authorProfile}
-                  authors={data.authors}
-                  memories={data.memories}
-                  letters={data.letters}
-                  memoriesCount={activeMemories.length}
-                  lettersCount={activeLetters.length}
-                  audiosCount={activeMemories.reduce((acc, m) => acc + (m.audios?.length || 0), 0)}
-                  lockedCount={activeMemories.filter((m) => m.isFutureLocked).length + activeLetters.filter((l) => l.isFutureLocked).length}
-                  onOpenAddModal={() => handleOpenAddMemory()}
-                  onEditProfile={() => setIsProfileModalOpen(true)}
-                  onOpenLockCapsule={() => {
-                    setActiveTab('mais');
-                    setActiveSubView('capsule');
-                  }}
-                  onOpenTimeCapsule={() => {
-                    setActiveTab('mais');
-                    setActiveSubView('capsule');
-                  }}
-                  onSelectTab={(tab) => {
-                    if (tab === 'memories') setActiveTab('memorias');
-                    else if (tab === 'letters') setActiveTab('cartas');
-                    else if (tab === 'more') setActiveTab('mais');
-                  }}
-                />
-
-                {/* 2. Interactive Home Widget (Latest Memories / Next Birthday Countdown) */}
-                <HomeWidget
-                  childProfile={data.childProfile}
-                  authorProfile={data.authorProfile}
-                  memories={data.memories}
-                  onSelectMemory={handleOpenDetailMemory}
-                  onOpenAddMemory={() => handleOpenAddMemory()}
-                  onOpenAddLetter={() => setActiveTab('cartas')}
-                  onViewAllMemories={() => setActiveTab('memorias')}
-                />
-
-                {/* 3. Neste Dia — Today In History */}
-                <TodayInHistory
-                  memories={data.memories}
-                  childProfile={data.childProfile}
-                  onSelectMemory={handleOpenDetailMemory}
-                  onOpenAddModal={() => handleOpenAddMemory()}
-                />
-
-                {/* 3. Tree of Life Interactive Garden */}
-                <TreeOfLife
-                  memories={data.memories}
-                  childProfile={data.childProfile}
-                  onSelectMemory={handleOpenDetailMemory}
-                  onOpenAddMemory={() => handleOpenAddMemory()}
-                  onOpenFullTree={() => {
-                    setActiveTab('mais');
-                    setActiveSubView('tree');
-                  }}
-                />
-
-                {/* 4. Recent Memories Feed */}
-                <RecentMemories
-                  memories={data.memories}
-                  onSelectMemory={handleOpenDetailMemory}
-                  onViewAll={() => setActiveTab('memorias')}
-                />
-              </div>
-            )}
-
-            {activeTab === 'memorias' && (
-              <MemoriesExplorer
-                memories={data.memories}
-                letters={data.letters}
-                onSelectMemory={handleOpenDetailMemory}
-                onOpenAddModal={() => handleOpenAddMemory()}
-                onOpenReader={(mem) => setReadingMemory(mem)}
-              />
-            )}
-
-            {activeTab === 'arvore' && (
-              <div className="space-y-6">
+        {/* View Switcher with smooth Framer-Motion transition based on ActiveTab & SubView */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSubView ? `subview-${activeSubView}` : `tab-${activeTab}`}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="w-full"
+          >
+            {activeSubView ? (
+              /* Subviews */
+              activeSubView === 'tree' ? (
                 <TreeOfLife
                   memories={data.memories}
                   childProfile={data.childProfile}
@@ -579,42 +459,174 @@ export default function Home() {
                   onOpenAddMemory={() => handleOpenAddMemory()}
                   isFullView={true}
                 />
-                <RecentMemories
+              ) : activeSubView === 'capsule' ? (
+                <TimeCapsuleView
                   memories={data.memories}
+                  letters={data.letters}
+                  childProfile={data.childProfile}
                   onSelectMemory={handleOpenDetailMemory}
-                  onViewAll={() => setActiveTab('memorias')}
                 />
-              </div>
-            )}
+              ) : activeSubView === 'milestones' ? (
+                <MilestonesView
+                  milestones={data.milestones}
+                  memories={data.memories}
+                  onSelectMilestoneMemory={(memId) => {
+                    const found = data.memories.find((m) => m.id === memId);
+                    if (found) handleOpenDetailMemory(found);
+                  }}
+                  onRecordMilestone={(cat) => handleOpenAddMemory(cat)}
+                  onAddCustomMilestone={handleAddCustomMilestone}
+                />
+              ) : activeSubView === 'growth' ? (
+                <GrowthStagesView
+                  memories={data.memories}
+                  childProfile={data.childProfile}
+                  onSelectMemory={handleOpenDetailMemory}
+                  onFilterStage={(stage) => {
+                    setActiveTab('memorias');
+                    setActiveSubView(null);
+                  }}
+                />
+              ) : activeSubView === 'trash' ? (
+                <TrashView
+                  deletedMemories={deletedMemories}
+                  deletedLetters={deletedLetters}
+                  onRestoreMemory={handleRestoreMemory}
+                  onPermanentDeleteMemory={handlePermanentDeleteMemory}
+                  onRestoreLetter={handleRestoreLetter}
+                  onPermanentDeleteLetter={handlePermanentDeleteLetter}
+                />
+              ) : null
+            ) : (
+              /* Main Primary Tabs */
+              <>
+                {activeTab === 'inicio' && (
+                  <div className="space-y-8">
+                    {/* 1. Header Overview with Age, Counters and 15-Year Countdown */}
+                    <HomeOverview
+                      childProfile={data.childProfile}
+                      authorProfile={data.authorProfile}
+                      authors={data.authors}
+                      memories={data.memories}
+                      letters={data.letters}
+                      memoriesCount={activeMemories.length}
+                      lettersCount={activeLetters.length}
+                      audiosCount={activeMemories.reduce((acc, m) => acc + (m.audios?.length || 0), 0)}
+                      lockedCount={activeMemories.filter((m) => m.isFutureLocked).length + activeLetters.filter((l) => l.isFutureLocked).length}
+                      onOpenAddModal={() => handleOpenAddMemory()}
+                      onEditProfile={() => setIsProfileModalOpen(true)}
+                      onOpenLockCapsule={() => {
+                        setActiveTab('mais');
+                        setActiveSubView('capsule');
+                      }}
+                      onOpenTimeCapsule={() => {
+                        setActiveTab('mais');
+                        setActiveSubView('capsule');
+                      }}
+                      onSelectTab={(tab) => {
+                        if (tab === 'memories') setActiveTab('memorias');
+                        else if (tab === 'letters') setActiveTab('cartas');
+                        else if (tab === 'more') setActiveTab('mais');
+                      }}
+                    />
 
-            {activeTab === 'cartas' && (
-              <LettersView
-                letters={data.letters}
-                childProfile={data.childProfile}
-                onSaveLetter={handleSaveLetter}
-                onDeleteLetter={handleSoftDeleteLetter}
-              />
-            )}
+                    {/* 2. Interactive Home Widget (Latest Memories / Next Birthday Countdown) */}
+                    <HomeWidget
+                      childProfile={data.childProfile}
+                      authorProfile={data.authorProfile}
+                      memories={data.memories}
+                      onSelectMemory={handleOpenDetailMemory}
+                      onOpenAddMemory={() => handleOpenAddMemory()}
+                      onOpenAddLetter={() => setActiveTab('cartas')}
+                      onViewAllMemories={() => setActiveTab('memorias')}
+                    />
 
-            {activeTab === 'mais' && (
-              <MoreView
-                childProfile={data.childProfile}
-                authorProfile={data.authorProfile}
-                authors={data.authors}
-                securitySettings={data.securitySettings}
-                trashCount={trashCount}
-                onNavigateSubView={(sub) => {
-                  if (sub === 'profile') setIsProfileModalOpen(true);
-                  else if (sub === 'security') setIsSecurityModalOpen(true);
-                  else if (sub === 'export') setIsExportModalOpen(true);
-                  else setActiveSubView(sub);
-                }}
-                onResetDemoData={handleResetData}
-                onLogout={handleLogout}
-              />
+                    {/* 3. Neste Dia — Today In History */}
+                    <TodayInHistory
+                      memories={data.memories}
+                      childProfile={data.childProfile}
+                      onSelectMemory={handleOpenDetailMemory}
+                      onOpenAddModal={() => handleOpenAddMemory()}
+                    />
+
+                    {/* 3. Tree of Life Interactive Garden */}
+                    <TreeOfLife
+                      memories={data.memories}
+                      childProfile={data.childProfile}
+                      onSelectMemory={handleOpenDetailMemory}
+                      onOpenAddMemory={() => handleOpenAddMemory()}
+                      onOpenFullTree={() => {
+                        setActiveTab('mais');
+                        setActiveSubView('tree');
+                      }}
+                    />
+
+                    {/* 4. Recent Memories Feed */}
+                    <RecentMemories
+                      memories={data.memories}
+                      onSelectMemory={handleOpenDetailMemory}
+                      onViewAll={() => setActiveTab('memorias')}
+                    />
+                  </div>
+                )}
+
+                {activeTab === 'memorias' && (
+                  <MemoriesExplorer
+                    memories={data.memories}
+                    letters={data.letters}
+                    onSelectMemory={handleOpenDetailMemory}
+                    onOpenAddModal={() => handleOpenAddMemory()}
+                    onOpenReader={(mem) => setReadingMemory(mem)}
+                  />
+                )}
+
+                {activeTab === 'arvore' && (
+                  <div className="space-y-6">
+                    <TreeOfLife
+                      memories={data.memories}
+                      childProfile={data.childProfile}
+                      onSelectMemory={handleOpenDetailMemory}
+                      onOpenAddMemory={() => handleOpenAddMemory()}
+                      isFullView={true}
+                    />
+                    <RecentMemories
+                      memories={data.memories}
+                      onSelectMemory={handleOpenDetailMemory}
+                      onViewAll={() => setActiveTab('memorias')}
+                    />
+                  </div>
+                )}
+
+                {activeTab === 'cartas' && (
+                  <LettersView
+                    letters={data.letters}
+                    childProfile={data.childProfile}
+                    onSaveLetter={handleSaveLetter}
+                    onDeleteLetter={handleSoftDeleteLetter}
+                  />
+                )}
+
+                {activeTab === 'mais' && (
+                  <MoreView
+                    childProfile={data.childProfile}
+                    authorProfile={data.authorProfile}
+                    authors={data.authors}
+                    securitySettings={data.securitySettings}
+                    trashCount={trashCount}
+                    onNavigateSubView={(sub) => {
+                      if (sub === 'profile') setIsProfileModalOpen(true);
+                      else if (sub === 'security') setIsSecurityModalOpen(true);
+                      else if (sub === 'export') setIsExportModalOpen(true);
+                      else setActiveSubView(sub);
+                    }}
+                    onResetDemoData={handleResetData}
+                    onLogout={handleLogout}
+                  />
+                )}
+              </>
             )}
-          </>
-        )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* 1. Add / Edit Memory Modal */}
