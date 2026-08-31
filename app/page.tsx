@@ -35,7 +35,7 @@ import { FamilyLoginScreen } from '@/components/FamilyLoginScreen';
 import { ExportModal } from '@/components/ExportModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { FirebaseSyncService } from '@/services/firebaseService';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Heart } from 'lucide-react';
 
 const emptySubscribe = () => () => {};
 
@@ -396,6 +396,18 @@ export default function Home() {
       // ignore
     }
   };
+
+  if (!hasMounted) {
+    return (
+      <div id="para-voce-loading" className="min-h-screen bg-[#FDFCF9] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-14 h-14 rounded-full bg-[#A3B18A]/20 border border-[#A3B18A]/40 flex items-center justify-center mb-3 animate-pulse">
+          <Heart className="w-7 h-7 text-[#4A6741] fill-[#4A6741]/30" />
+        </div>
+        <h1 className="text-lg font-serif font-bold text-[#2C2825] tracking-wide">Para Você</h1>
+        <p className="text-xs text-[#8C867E] mt-0.5 font-sans">Carregando livro de memórias...</p>
+      </div>
+    );
+  }
 
   return (
     <div id="para-voce-app" className="min-h-screen bg-[#FDFCF9] text-[#4A443F] flex flex-col selection:bg-[#4A6741]/20" suppressHydrationWarning>

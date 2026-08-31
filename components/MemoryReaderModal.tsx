@@ -48,6 +48,41 @@ type ReaderSize = 'sm' | 'md' | 'lg' | 'xl';
 type ReaderSpacing = 'normal' | 'relaxed' | 'spacious';
 type ReaderWidth = 'narrow' | 'medium' | 'wide';
 
+function useStoredPreference<T>(key: string, defaultValue: T): [T, (val: T | ((prev: T) => T)) => void] {
+  const [value, setValueState] = useState<T>(() => {
+    if (typeof window === 'undefined') return defaultValue;
+    try {
+      const item = localStorage.getItem(key);
+      if (item === null) return defaultValue;
+      if (typeof defaultValue === 'boolean') {
+        return (item === 'true') as unknown as T;
+      }
+      return item as unknown as T;
+    } catch {
+      return defaultValue;
+    }
+  });
+
+  const setValue = useCallback(
+    (val: T | ((prev: T) => T)) => {
+      setValueState((prev) => {
+        const nextVal = typeof val === 'function' ? (val as (prev: T) => T)(prev) : val;
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(key, String(nextVal));
+          } catch {
+            // ignore
+          }
+        }
+        return nextVal;
+      });
+    },
+    [key]
+  );
+
+  return [value, setValue];
+}
+
 export const MemoryReaderModal: React.FC<MemoryReaderModalProps> = ({
   memory,
   allMemories = [],
@@ -57,55 +92,13 @@ export const MemoryReaderModal: React.FC<MemoryReaderModalProps> = ({
   onEdit,
 }) => {
   // Reading preferences stored in state / localStorage
-  const [theme, setTheme] = useState<ReaderTheme>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('pv_reader_theme') as ReaderTheme;
-      if (saved) return saved;
-    }
-    return 'paper';
-  });
-  const [font, setFont] = useState<ReaderFont>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('pv_reader_font') as ReaderFont;
-      if (saved) return saved;
-    }
-    return 'serif';
-  });
-  const [size, setSize] = useState<ReaderSize>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('pv_reader_size') as ReaderSize;
-      if (saved) return saved;
-    }
-    return 'md';
-  });
-  const [spacing, setSpacing] = useState<ReaderSpacing>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('pv_reader_spacing') as ReaderSpacing;
-      if (saved) return saved;
-    }
-    return 'relaxed';
-  });
-  const [width, setWidth] = useState<ReaderWidth>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('pv_reader_width') as ReaderWidth;
-      if (saved) return saved;
-    }
-    return 'medium';
-  });
-  const [showDropCap, setShowDropCap] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('pv_reader_dropcap');
-      if (saved !== null) return saved === 'true';
-    }
-    return true;
-  });
-  const [showPhoto, setShowPhoto] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('pv_reader_photo');
-      if (saved !== null) return saved === 'true';
-    }
-    return true;
-  });
+  const [theme, setTheme] = useStoredPreference<ReaderTheme>('pv_reader_theme', 'paper');
+  const [font, setFont] = useStoredPreference<ReaderFont>('pv_reader_font', 'serif');
+  const [size, setSize] = useStoredPreference<ReaderSize>('pv_reader_size', 'md');
+  const [spacing, setSpacing] = useStoredPreference<ReaderSpacing>('pv_reader_spacing', 'relaxed');
+  const [width, setWidth] = useStoredPreference<ReaderWidth>('pv_reader_width', 'medium');
+  const [showDropCap, setShowDropCap] = useStoredPreference<boolean>('pv_reader_dropcap', true);
+  const [showPhoto, setShowPhoto] = useStoredPreference<boolean>('pv_reader_photo', true);
   const [showControls, setShowControls] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [scrollProgress, setScrollProgress] = useState<number>(0);
@@ -119,46 +112,13 @@ export const MemoryReaderModal: React.FC<MemoryReaderModalProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Save preferences
-  const updateTheme = (newTheme: ReaderTheme) => {
-    setTheme(newTheme);
-    if (typeof window !== 'undefined') localStorage.setItem('pv_reader_theme', newTheme);
-  };
-
-  const updateFont = (newFont: ReaderFont) => {
-    setFont(newFont);
-    if (typeof window !== 'undefined') localStorage.setItem('pv_reader_font', newFont);
-  };
-
-  const updateSize = (newSize: ReaderSize) => {
-    setSize(newSize);
-    if (typeof window !== 'undefined') localStorage.setItem('pv_reader_size', newSize);
-  };
-
-  const updateSpacing = (newSpacing: ReaderSpacing) => {
-    setSpacing(newSpacing);
-    if (typeof window !== 'undefined') localStorage.setItem('pv_reader_spacing', newSpacing);
-  };
-
-  const updateWidth = (newWidth: ReaderWidth) => {
-    setWidth(newWidth);
-    if (typeof window !== 'undefined') localStorage.setItem('pv_reader_width', newWidth);
-  };
-
-  const toggleDropCap = () => {
-    setShowDropCap((prev) => {
-      const next = !prev;
-      if (typeof window !== 'undefined') localStorage.setItem('pv_reader_dropcap', String(next));
-      return next;
-    });
-  };
-
-  const togglePhoto = () => {
-    setShowPhoto((prev) => {
-      const next = !prev;
-      if (typeof window !== 'undefined') localStorage.setItem('pv_reader_photo', String(next));
-      return next;
-    });
-  };
+  const updateTheme = (newTheme: ReaderTheme) => setTheme(newTheme);
+  const updateFont = (newFont: ReaderFont) => setFont(newFont);
+  const updateSize = (newSize: ReaderSize) => setSize(newSize);
+  const updateSpacing = (newSpacing: ReaderSpacing) => setSpacing(newSpacing);
+  const updateWidth = (newWidth: ReaderWidth) => setWidth(newWidth);
+  const toggleDropCap = () => setShowDropCap((prev) => !prev);
+  const togglePhoto = () => setShowPhoto((prev) => !prev);
 
   // Filter active memories in chronological order for next/previous navigation
   const sortedMemories = useMemo(() => {

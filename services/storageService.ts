@@ -39,20 +39,30 @@ export const storageService = {
         const rawChild = localStorage.getItem('pv_child_profile_cache');
         if (rawChild) {
           const parsed = JSON.parse(rawChild);
-          if (parsed && typeof parsed === 'object' && parsed.name) {
+          if (parsed && typeof parsed === 'object') {
             if (parsed.profilePhoto && parsed.profilePhoto.includes('1544126592-807ade215a0b')) {
               parsed.profilePhoto = '';
             }
-            cachedChild = parsed;
+            cachedChild = { ...defaultChildProfile, ...parsed };
           }
         }
+      } catch {
+        // ignore JSON parse error
+      }
+
+      try {
         const rawAuthor = localStorage.getItem('pv_author_profile_cache');
         if (rawAuthor) {
           const parsed = JSON.parse(rawAuthor);
-          if (parsed && typeof parsed === 'object' && parsed.name) {
-            cachedAuthor = parsed;
+          if (parsed && typeof parsed === 'object') {
+            cachedAuthor = { ...defaultAuthorProfile, ...parsed };
           }
         }
+      } catch {
+        // ignore JSON parse error
+      }
+
+      try {
         const rawAuthors = localStorage.getItem('pv_authors_cache');
         if (rawAuthors) {
           const parsed = JSON.parse(rawAuthors);
@@ -60,8 +70,8 @@ export const storageService = {
             cachedAuthors = parsed;
           }
         }
-      } catch (e) {
-        console.warn('Could not read fast local cache:', e);
+      } catch {
+        // ignore JSON parse error
       }
     }
 
