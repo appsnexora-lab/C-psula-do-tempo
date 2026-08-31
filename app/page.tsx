@@ -304,6 +304,12 @@ export default function Home() {
     author: AuthorProfile,
     authors?: AuthorProfile[]
   ) => {
+    setData((prev) => ({
+      ...prev,
+      childProfile: child,
+      authorProfile: author,
+      authors: authors && authors.length > 0 ? authors : prev.authors,
+    }));
     await StorageService.saveChildProfile(child);
     await StorageService.saveAuthorProfile(author);
     if (authors && authors.length > 0) {

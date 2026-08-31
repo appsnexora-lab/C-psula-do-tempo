@@ -30,10 +30,45 @@ const STORE_SETTINGS = 'settings';
 
 export const storageService = {
   getFallbackData(): StorageData {
+    let cachedChild = defaultChildProfile;
+    let cachedAuthor = defaultAuthorProfile;
+    let cachedAuthors = defaultAuthors;
+
+    if (typeof window !== 'undefined') {
+      try {
+        const rawChild = localStorage.getItem('pv_child_profile_cache');
+        if (rawChild) {
+          const parsed = JSON.parse(rawChild);
+          if (parsed && typeof parsed === 'object' && parsed.name) {
+            if (parsed.profilePhoto && parsed.profilePhoto.includes('1544126592-807ade215a0b')) {
+              parsed.profilePhoto = '';
+            }
+            cachedChild = parsed;
+          }
+        }
+        const rawAuthor = localStorage.getItem('pv_author_profile_cache');
+        if (rawAuthor) {
+          const parsed = JSON.parse(rawAuthor);
+          if (parsed && typeof parsed === 'object' && parsed.name) {
+            cachedAuthor = parsed;
+          }
+        }
+        const rawAuthors = localStorage.getItem('pv_authors_cache');
+        if (rawAuthors) {
+          const parsed = JSON.parse(rawAuthors);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedAuthors = parsed;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not read fast local cache:', e);
+      }
+    }
+
     return {
-      childProfile: defaultChildProfile,
-      authorProfile: defaultAuthorProfile,
-      authors: defaultAuthors,
+      childProfile: cachedChild,
+      authorProfile: cachedAuthor,
+      authors: cachedAuthors,
       memories: initialMemories,
       letters: initialLetters,
       milestones: initialMilestones,
@@ -154,24 +189,77 @@ export const storageService = {
   // Child Profile
   async getChildProfile(): Promise<ChildProfile> {
     const res = await idbGet<{ id: string; profile: ChildProfile }>(STORE_PROFILES, 'child');
-    return res?.profile || defaultChildProfile;
+    let profile = res?.profile;
+    if (!profile && typeof window !== 'undefined') {
+      const raw = localStorage.getItem('pv_child_profile_cache');
+      if (raw) {
+        try {
+          profile = JSON.parse(raw);
+        } catch {
+          // ignore
+        }
+      }
+    }
+    if (!profile) {
+      profile = defaultChildProfile;
+    }
+    if (profile.profilePhoto && profile.profilePhoto.includes('1544126592-807ade215a0b')) {
+      profile.profilePhoto = '';
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('pv_child_profile_cache', JSON.stringify(profile));
+      } catch {
+        // ignore
+      }
+    }
+    return profile;
   },
 
   async saveChildProfile(profile: ChildProfile, syncRemote: boolean = true): Promise<void> {
-    await idbSet(STORE_PROFILES, { id: 'child', profile });
+    const sanitized = { ...profile };
+    if (sanitized.profilePhoto && sanitized.profilePhoto.includes('1544126592-807ade215a0b')) {
+      sanitized.profilePhoto = '';
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('pv_child_profile_cache', JSON.stringify(sanitized));
+      } catch (e) {
+        console.warn('LocalStorage save error for child profile:', e);
+      }
+    }
+    await idbSet(STORE_PROFILES, { id: 'child', profile: sanitized });
     if (syncRemote) {
       const vaultId = FirebaseSyncService.getActiveVaultId();
-      FirebaseSyncService.syncVaultRoot(vaultId, { childProfile: profile }).catch(console.error);
+      FirebaseSyncService.syncVaultRoot(vaultId, { childProfile: sanitized }).catch(console.error);
     }
   },
 
   // Author Profile
   async getAuthorProfile(): Promise<AuthorProfile> {
     const res = await idbGet<{ id: string; profile: AuthorProfile }>(STORE_PROFILES, 'author');
-    return res?.profile || defaultAuthorProfile;
+    let profile = res?.profile;
+    if (!profile && typeof window !== 'undefined') {
+      const raw = localStorage.getItem('pv_author_profile_cache');
+      if (raw) {
+        try {
+          profile = JSON.parse(raw);
+        } catch {
+          // ignore
+        }
+      }
+    }
+    return profile || defaultAuthorProfile;
   },
 
   async saveAuthorProfile(profile: AuthorProfile, syncRemote: boolean = true): Promise<void> {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('pv_author_profile_cache', JSON.stringify(profile));
+      } catch {
+        // ignore
+      }
+    }
     await idbSet(STORE_PROFILES, { id: 'author', profile });
     if (syncRemote) {
       const authors = await this.getAuthors();
@@ -191,6 +279,17 @@ export const storageService = {
     if (res?.list && res.list.length > 0) {
       return res.list;
     }
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem('pv_authors_cache');
+      if (raw) {
+        try {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) return list;
+        } catch {
+          // ignore
+        }
+      }
+    }
     const single = await this.getAuthorProfile();
     return [
       single,
@@ -204,6 +303,13 @@ export const storageService = {
   },
 
   async saveAuthors(authors: AuthorProfile[], syncRemote: boolean = true): Promise<void> {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('pv_authors_cache', JSON.stringify(authors));
+      } catch {
+        // ignore
+      }
+    }
     await idbSet(STORE_PROFILES, { id: 'authors_list', list: authors });
     if (authors.length > 0) {
       const primary = authors.find((a) => a.isPrimary) || authors[0];
@@ -529,8 +635,30 @@ export const storageService = {
     letters?: Letter[];
     milestones?: MilestoneItem[];
   }): Promise<void> {
-    if (data.childProfile) await idbSet(STORE_PROFILES, { id: 'child', profile: data.childProfile });
-    if (data.authors) await idbSet(STORE_PROFILES, { id: 'authors_list', list: data.authors });
+    if (data.childProfile) {
+      const sanitized = { ...data.childProfile };
+      if (sanitized.profilePhoto && sanitized.profilePhoto.includes('1544126592-807ade215a0b')) {
+        sanitized.profilePhoto = '';
+      }
+      await idbSet(STORE_PROFILES, { id: 'child', profile: sanitized });
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('pv_child_profile_cache', JSON.stringify(sanitized));
+        } catch {
+          // ignore
+        }
+      }
+    }
+    if (data.authors) {
+      await idbSet(STORE_PROFILES, { id: 'authors_list', list: data.authors });
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('pv_authors_cache', JSON.stringify(data.authors));
+        } catch {
+          // ignore
+        }
+      }
+    }
     if (data.securitySettings) await idbSet(STORE_SETTINGS, { id: 'security', settings: data.securitySettings });
 
     if (data.memories) {

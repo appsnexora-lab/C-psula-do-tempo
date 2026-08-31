@@ -7,7 +7,7 @@ export const defaultChildProfile: ChildProfile = {
   birthDate: '2026-02-15',
   nickname: 'Lili',
   notes: 'Nosso maior presente. Os olhos mais curiosos do mundo.',
-  profilePhoto: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?auto=format&fit=crop&w=800&q=80',
+  profilePhoto: '',
 };
 
 export const defaultAuthorProfile: AuthorProfile = {
